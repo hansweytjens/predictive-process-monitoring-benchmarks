@@ -3,7 +3,7 @@ This repository contains two files.
 
 "BPIC_scripts" is notebook containing the scripts to convert the original BPIC (Business Process Intelligence Challenge) datasets into benchmark datasets as described in the paper "Creating Unbiased Public Benchmark Datasets with Data Leakage Prevention for Predictive Process Monitoring" (abstract below).
 
-"create_benchmarks" is a python file with code for "BPIC_scripts".
+"create_benchmarks" is a python file with code for "BPIC_scripts". 
 
 ### Datasets
 The BPIC datasets can be downloaded from:
@@ -30,3 +30,6 @@ Some events in the test set (red in Fig.2 in the paper) have the value "NAN" as 
 
 ### Paper abstract
 Advances in AI, and especially machine learning, are increasingly drawing research interest and efforts towards predictive process monitoring, the subfield of process mining (PM) that concerns predicting next events, process outcomes and remaining execution times. Unfortunately, researchers use a variety of datasets and ways to split them into training and test sets. The documentation of these preprocessing steps is not always complete. Consequently, research results are hard or even impossible to reproduce and to compare between papers. At times, the use of non-public domain knowledge further hampers the fair competition of ideas. Often the training and test sets are not completely separated, a data leakage problem particular to predictive process monitoring. Moreover, test sets usually suffer from bias in terms of both the mix of case durations and the number of running cases. These obstacles pose a challenge to the  field's progress. The contribution of this paper is to identify and demonstrate the importance of these obstacles and to propose preprocessing steps to arrive at unbiased benchmark datasets in a principled way, thus creating representative test sets without data leakage with the aim of levelling the playing field, promoting open science and contributing to more rapid progress in predictive process monitoring.
+
+### Classification
+Addtionnally, the scripts can also be used to add classification targets to the BPIC_2012 and BPIC_2017 datasets. Each datasets contains 3 binary (True/False) targets: "approved", "declined" and "canceled". As for the remaining time targets, some targets in the test set are set to "NAN" (see "Using the test set for inference"). Note that in the case of BPIC_2017, the targets are not mututally exclusive as sometimes "canceled" cases are restarted and "approved" or "declined" cases become "canceled" later.ose preprocessing steps to arrive at unbiased benchmark datasets in a principled way, thus creating representative test sets without data leakage with the aim of levelling the playing field, promoting open science and contributing to more rapid progress in predictive process monitoring.

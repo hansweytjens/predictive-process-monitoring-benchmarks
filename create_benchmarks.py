@@ -68,7 +68,7 @@ def limited_duration(dataset, max_duration):
     return dataset, latest_start
 
 
-def trainTestSplit(df, test_len, latest_start):
+def trainTestSplit(df, test_len, latest_start, targets):
     '''
     splits the dataset in train and test set, applying strict temporal splitting and
     debiasing the test set
@@ -76,11 +76,9 @@ def trainTestSplit(df, test_len, latest_start):
         df: pandas DataFrame
         test_len: float: share of cases belonging in test set
         latest_start: timeStamp with new end time for the dataset
-
     Returns:
         df_train: pandas DataFrame
         df_test: pandas DataFrame
-
     '''
     # preliminaries
     case_starts_df = df.groupby("case:concept:name")["time:timestamp"].min()
@@ -99,7 +97,7 @@ def trainTestSplit(df, test_len, latest_start):
     df_test = df_test_all[df_test_all["time:timestamp"] <= latest_start]
 
     # convert targets into np.NAN for those prefixes that end before the separation time (beginning of test set)
-    df_test.loc[df_test["time:timestamp"].values < first_test_start_time, "remain_time"] = np.nan
+    df_test.loc[df_test["time:timestamp"].values < first_test_start_time, targets] = np.nan
 
     #### TRAINING SET ###
     train_case_nrs = case_stops_df[case_stops_df["time:timestamp"].values < first_test_start_time].index.array  # added values
@@ -108,9 +106,20 @@ def trainTestSplit(df, test_len, latest_start):
     return df_train, df_test
 
 
-def createBenchmark(dataset, path, file_name, start_date, end_date, max_days, test_len_share, output_type="xes"):
-    '''
+def createClassificationTargets(df, col, keywords_dict):
+    # compute target values for classification
+    def tv(grp):
+        # compute target value (True if one event in group is in keywords)
+        for target, keywords in keywords_dict.items():
+            grp[target] = True in [x in grp[col].values for x in keywords]
+        return grp
+    df = df.groupby("case:concept:name").apply(tv)
+    return df
 
+
+def createBenchmark(dataset, path, file_name, start_date, end_date, max_days, test_len_share, 
+                    output_type="xes", keywords_dict=None):
+    '''
     Args:
         dataset: pandas DataFrame
         path: string: output file path
@@ -120,9 +129,7 @@ def createBenchmark(dataset, path, file_name, start_date, end_date, max_days, te
         max_days: float
         test_len_share: float: share of cases belonging in test set
         output_type: string: "xes", "pickle" or "csv"
-
     Returns:
-
     '''
 
     # compute the target
@@ -139,9 +146,17 @@ def createBenchmark(dataset, path, file_name, start_date, end_date, max_days, te
 
     # drop longest cases and debiasing end of dataset
     dataset_short, latest_start = limited_duration(dataset, max_days)
+    
+    targets = "remain_time"
+    # create targets for classification
+    if keywords_dict:
+        dataset_short = createClassificationTargets(dataset_short, "classif_target", keywords_dict)
+        dataset_short.drop(columns=["classif_target"], inplace=True)
+        targets = list(keywords_dict.keys()) + ["remain_time"]
 
     # Split dataset in train and test set, applying strict temporal splitting and debiasing the test set
-    dataset_train, dataset_test = trainTestSplit(dataset_short, test_len=test_len_share, latest_start=latest_start)
+    dataset_train, dataset_test = trainTestSplit(dataset_short, test_len=test_len_share, latest_start=latest_start,
+                                                targets=targets)
 
     # record outputs
     if output_type == "xes":
@@ -161,3 +176,4 @@ def createBenchmark(dataset, path, file_name, start_date, end_date, max_days, te
         dataset_test.to_csv(path + "/" + file_name + "_test.pkl")
     else:
         print("output type unknown. Should be 'xes', 'pickle' or 'csv'")
+
