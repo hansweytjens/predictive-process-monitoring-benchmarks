@@ -83,8 +83,7 @@ def trainTestSplit(df, test_len, latest_start, targets):
     # preliminaries
     case_starts_df = df.groupby("case:concept:name")["time:timestamp"].min()
     case_nr_list_start = case_starts_df.sort_values().index.array
-    case_stops_df = df.groupby("case:concept:name")[
-        "time:timestamp"].max().to_frame()  # dataframe with case_nr in index, and last times in column
+    case_stops_df = df.groupby("case:concept:name")["time:timestamp"].max().to_frame()  
 
     ### TEST SET ###
     first_test_case_nr = int(len(case_nr_list_start) * (1 - test_len))
@@ -117,9 +116,11 @@ def createClassificationTargets(df, col, keywords_dict):
     return df
 
 
-def createBenchmark(dataset, path, file_name, start_date, end_date, max_days, test_len_share, 
+def remainTimeOrClassifBenchmark(dataset, path, file_name, start_date, end_date, max_days, test_len_share, 
                     output_type="xes", keywords_dict=None):
     '''
+    Creates benchmark training and test sets for remaining time and classification problems
+    
     Args:
         dataset: pandas DataFrame
         path: string: output file path
@@ -130,6 +131,7 @@ def createBenchmark(dataset, path, file_name, start_date, end_date, max_days, te
         test_len_share: float: share of cases belonging in test set
         output_type: string: "xes", "pickle" or "csv"
     Returns:
+        two files ('_train' and '_test')
     '''
 
     # compute the target
@@ -177,3 +179,80 @@ def createBenchmark(dataset, path, file_name, start_date, end_date, max_days, te
     else:
         print("output type unknown. Should be 'xes', 'pickle' or 'csv'")
 
+
+def nextEventBenchmark(dataset, path, file_name, start_date, end_date, max_days, test_len_share, output_type="xes",
+                       event_col="activity"):
+    '''
+    Creates benchmark training and test sets for next event problems
+    
+    Args:
+        dataset: pandas DataFrame
+        path: string: output file path
+        file_name: string: output file name
+        start_date: string "MM-YYYY": dataset starts here after removing outliers
+        end_date: string "MM-YYYY": dataset stops here after removing outliers
+        max_days: float
+        test_len_share: float: share of cases belonging in test set
+        output_type: string: "xes", "pickle" or "csv"
+        event_col: string: column containing the event names
+    Returns:
+        two files ('_train' and '_test')
+    '''
+
+    # remove chronological outliers and duplicates
+    dataset["time:timestamp"] = pd.to_datetime(dataset["time:timestamp"], utc=True)
+    if start_date:
+        dataset = start_from_date(dataset, start_date)
+    if end_date:
+        dataset = end_before_date(dataset, end_date)
+    dataset.drop_duplicates(inplace=True)
+
+    # drop longest cases and debiasing end of dataset
+    dataset_short, latest_start = limited_duration(dataset, max_days)
+    
+    # preliminaries
+    case_stops_df = dataset.groupby("case:concept:name")["time:timestamp"].max()
+    
+    ### TRAINING AND TEST SET ###
+    sorted_timestamps = np.sort(dataset["time:timestamp"].values)
+    separation_time = sorted_timestamps[int(len(sorted_timestamps) * (1 - test_len_share))]
+    print(separation_time)
+    
+    #train_case_nrs = case_stops_df[case_stops_df.values <= separation_time].index.array  
+    dataset_train = dataset[dataset["time:timestamp"] <= pd.to_datetime(separation_time, utc=True)].reset_index(drop=True)
+    test_case_nrs = case_stops_df[case_stops_df.values > separation_time].index.array 
+    dataset_test = dataset[dataset["case:concept:name"].isin(test_case_nrs)].reset_index(drop=True)
+    
+    # compute targets: next event
+    def calcNextEvent(grp):
+        grp["nextEvent"] = grp[event_col].shift(periods=-1)
+        return grp
+
+    dataset_train = dataset_train.groupby("case:concept:name").apply(calcNextEvent)
+    dataset_train = dataset_train.dropna(subset=["nextEvent"]).reset_index(drop=True)
+    dataset_test = dataset_test.groupby("case:concept:name").apply(calcNextEvent)
+    dataset_test = dataset_test.dropna(subset=["nextEvent"]).reset_index(drop=True)
+    
+    # convert targets into np.NAN for those prefixes in test set
+    # that end before the separation time (beginning of test set)
+    dataset_test.loc[dataset_test["time:timestamp"].values < separation_time, "nextEvent"] = np.nan
+    
+
+    # record outputs
+    if output_type == "xes":
+        log_train = converter.apply(dataset_train, variant=converter.Variants.TO_EVENT_LOG)
+        print("dataset_train converted to logs")
+        xes_exporter.apply(log_train, path + "/" + file_name + "_next_event_train.xes")
+        print("dataset_train exported as xes")
+        log_test = converter.apply(dataset_test, variant=converter.Variants.TO_EVENT_LOG)
+        print("dataset_test converted to logs")
+        xes_exporter.apply(log_test, path + "/" + file_name + "_next_event_test.xes")
+        print("dataset_test exported as xes")
+    elif output_type == "pickle":
+        dataset_train.to_pickle(path + "/" + file_name + "_next_event_train.pkl")
+        dataset_test.to_pickle(path + "/" + file_name + "_next_event_test.pkl")
+    elif output_type == "csv":
+        dataset_train.to_csv(path + "/" + file_name + "_next_event_train.pkl")
+        dataset_test.to_csv(path + "/" + file_name + "_next_event_test.pkl")
+    else:
+        print("output type unknown. Should be 'xes', 'pickle' or 'csv'")
