@@ -1,7 +1,7 @@
 ### README 
 This repository contains two files. 
 
-"BPIC_scripts" is notebook containing the scripts to convert the original BPIC (Business Process Intelligence Challenge) datasets into benchmark datasets as described in the paper "Creating Unbiased Public Benchmark Datasets with Data Leakage Prevention for Predictive Process Monitoring" (abstract below).
+"BPIC_scripts" is a notebook containing the scripts to convert the original BPIC (Business Process Intelligence Challenge) datasets into benchmark datasets as described in the paper "Creating Unbiased Public Benchmark Datasets with Data Leakage Prevention for Predictive Process Monitoring" (abstract below).
 
 "create_benchmarks" is a python file with code for "BPIC_scripts". 
 
