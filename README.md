@@ -39,3 +39,6 @@ Additionnally, the scripts can also be used to add classification targets to the
 
 ### Next event prediction
 Scripts for next event prediction were also added for BPIC_2012 and BPIC_2017, according to the guidelines laid out in the paper. The targets are found in the column "nextEvent".
+
+### Caution
+Make sure to NOT use targets from another prediction problem as features for your prediction problem!
