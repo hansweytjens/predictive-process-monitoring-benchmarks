@@ -25,7 +25,7 @@ The scripts output two files: a training set and test set according to the princ
 Since we concatenated five files corresponding to five municipalities into one BPIC_2015 dataset, we also added a "munic" column to identify the original municipality. The values in "case:concept:name" which identify the cases were slightly modified to avoid overlap.
 
 ### Using the test set for inference
-Some events in the test set (red in Fig.2 in the paper) have the value "NAN" as their targets. These events belong to cases that start before the separation time (start time of the test set), but end after it (red/grey cases in Fig. 2). The events corresponding to prefixes ending after the separation time (in grey in Fig. 2) do carry a real target and belong to the test set. The prefixes corresponding to the events with "NAN" targets are not part of the test set and should not be used for inference. However, the researcher will use these events before the separation time to construct the prefixes that are part of the dataset.
+Some events in the test set (colored red in Fig.2 in the paper) have the value "NAN" as their targets. These events belong to cases that start before the separation time (start time of the test set), but end after it (red/grey cases in Fig. 2). The events corresponding to prefixes ending after the separation time (in grey in Fig. 2) do carry a real target and belong to the test set. The prefixes corresponding to the events with "NAN" targets are not part of the test set and should not be used for inference. However, the researcher will use these events before the separation time to construct the prefixes that are part of the dataset.
 
 
 ### Paper abstract
