@@ -20,7 +20,7 @@ The scripts in this repository require the installation of PM4PY (https://pm4py.
 Due to a built-in compression mechanism within the pm4py libary, converting the BPIC_2017 train and test sets is not feasible within a reasonable time frame. Users are recommended to save them as pickle or csv files instead, as shown in the script.
 
 ### Outputs
-The scripts output two files: a training set and test set according to the principles laid out in the paper. 
+The scripts output two files: a training set and test set according to the principles laid out in the paper. The outputs can be found in the same directory (PATH) as where the original xes files were found, and will be in xes-format as well, unless otherwise specified (BPIC_2017). The suffices "_train" and "_test" are added to the original file names.
 
 Since we concatenated five files corresponding to five municipalities into one BPIC_2015 dataset, we also added a "munic" column to identify the original municipality. The values in "case:concept:name" which identify the cases were slightly modified to avoid overlap.
 
